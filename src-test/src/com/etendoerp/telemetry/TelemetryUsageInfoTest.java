@@ -11,7 +11,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -30,9 +29,9 @@ import javax.servlet.ServletException;
 
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.junit.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
@@ -47,776 +46,794 @@ import org.openbravo.service.db.QueryTimeOutUtil;
  */
 public class TelemetryUsageInfoTest {
 
-    private static final String TEST_SESSION = "test-session";
-    private static final String TEST_COMMAND = "test-command";
-    private static final String TEST_USER = "test-user";
-    private static final String TEST_MODULE = "test-module";
-    private static final String TEST_OBJECT = "test-object";
-    private static final String TEST_CLASS = "TestClass";
-    private static final String OBJECT_TYPE_PROCESS = "P";
-    private static final String SESSION_PREFIX = "session-";
-    private static final long TEST_TIME = 123456789L;
-    private static final int TIMEOUT_SECONDS = 10;
-    private static final String DEFAULT_PROFILE = "default";
-    private static final String USER1 = "user1";
-    private static final String SESSION1 = "session1";
-    private static final String OBJECT1 = "object1";
-    private static final String MODULE1 = "module1";
-    private static final String COMMAND1 = "command1";
-    private static final String TIME_123456 = "123456";
-    private static final String JSON_TEST_DATA = "{\"test\":\"data\"}";
+  private static final String TEST_SESSION = "test-session";
+  private static final String TEST_COMMAND = "test-command";
+  private static final String TEST_USER = "test-user";
+  private static final String TEST_MODULE = "test-module";
+  private static final String TEST_OBJECT = "test-object";
+  private static final String TEST_CLASS = "TestClass";
+  private static final String OBJECT_TYPE_PROCESS = "P";
+  private static final String SESSION_PREFIX = "session-";
+  private static final long TEST_TIME = 123456789L;
+  private static final int TIMEOUT_SECONDS = 10;
+  private static final String DEFAULT_PROFILE = "default";
+  private static final String USER1 = "user1";
+  private static final String SESSION1 = "session1";
+  private static final String OBJECT1 = "object1";
+  private static final String MODULE1 = "module1";
+  private static final String COMMAND1 = "command1";
+  private static final String TIME_123456 = "123456";
+  private static final String JSON_TEST_DATA = "{\"test\":\"data\"}";
 
-    @Mock
-    private ConnectionProvider mockConnectionProvider;
+  @Mock
+  private ConnectionProvider mockConnectionProvider;
 
-    @Mock
-    private PreparedStatement mockPreparedStatement;
+  @Mock
+  private PreparedStatement mockPreparedStatement;
 
-    @Mock
-    private QueryTimeOutUtil mockQueryTimeOutUtil;
+  @Mock
+  private QueryTimeOutUtil mockQueryTimeOutUtil;
 
-    private AutoCloseable mocks;
-    private MockedStatic<SessionInfo> mockedSessionInfo;
-    private MockedStatic<UtilSql> mockedUtilSql;
-    private MockedStatic<QueryTimeOutUtil> mockedQueryTimeOutUtil;
+  private AutoCloseable mocks;
+  private MockedStatic<SessionInfo> mockedSessionInfo;
+  private MockedStatic<UtilSql> mockedUtilSql;
+  private MockedStatic<QueryTimeOutUtil> mockedQueryTimeOutUtil;
 
-    /**
-     * Sets up test environment before each test.
-     * Initializes mocks and clears thread-local instances.
-     */
-    @BeforeEach
-    public void setUp() {
-        mocks = MockitoAnnotations.openMocks(this);
-        
-        // Clear any existing thread-local instances before each test
-        TelemetryUsageInfo.clear();
-        
-        // Setup static mocks
-        mockedSessionInfo = mockStatic(SessionInfo.class);
-        mockedUtilSql = mockStatic(UtilSql.class);
-        mockedQueryTimeOutUtil = mockStatic(QueryTimeOutUtil.class);
-        
-        when(QueryTimeOutUtil.getInstance()).thenReturn(mockQueryTimeOutUtil);
+  /**
+   * Sets up test environment before each test.
+   * Initializes mocks and clears thread-local instances.
+   */
+  @BeforeEach
+  public void setUp() {
+    mocks = MockitoAnnotations.openMocks(this);
+
+    // Clear any existing thread-local instances before each test
+    TelemetryUsageInfo.clear();
+
+    // Setup static mocks
+    mockedSessionInfo = mockStatic(SessionInfo.class);
+    mockedUtilSql = mockStatic(UtilSql.class);
+    mockedQueryTimeOutUtil = mockStatic(QueryTimeOutUtil.class);
+
+    when(QueryTimeOutUtil.getInstance()).thenReturn(mockQueryTimeOutUtil);
+  }
+
+  /**
+   * Cleans up test environment after each test.
+   * Closes mocks and clears thread-local instances.
+   *
+   * @throws Exception
+   *     if cleanup fails
+   */
+  @AfterEach
+  public void tearDown() throws Exception {
+    // Clean up thread-local instances after each test
+    TelemetryUsageInfo.clear();
+
+    if (mockedSessionInfo != null) {
+      mockedSessionInfo.close();
     }
+    if (mockedUtilSql != null) {
+      mockedUtilSql.close();
+    }
+    if (mockedQueryTimeOutUtil != null) {
+      mockedQueryTimeOutUtil.close();
+    }
+    if (mocks != null) {
+      mocks.close();
+    }
+  }
 
-    /**
-     * Cleans up test environment after each test.
-     * Closes mocks and clears thread-local instances.
-     * 
-     * @throws Exception if cleanup fails
-     */
-    @AfterEach
-    public void tearDown() throws Exception {
-        // Clean up thread-local instances after each test
-        TelemetryUsageInfo.clear();
-        
-        if (mockedSessionInfo != null) {
-            mockedSessionInfo.close();
+  /**
+   * Test that getInstance returns a non-null instance
+   */
+  @Test
+  public void shouldReturnNonNullInstance() {
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    assertNotNull(instance);
+  }
+
+  /**
+   * Test that getInstance returns the same instance for the same thread
+   */
+  @Test
+  public void shouldReturnSameInstanceForSameThread() {
+    TelemetryUsageInfo instance1 = TelemetryUsageInfo.getInstance();
+    TelemetryUsageInfo instance2 = TelemetryUsageInfo.getInstance();
+
+    assertEquals(instance1, instance2);
+  }
+
+  /**
+   * Test that different threads get different instances
+   *
+   * @throws InterruptedException
+   *     if thread execution is interrupted
+   */
+  @Test
+  public void shouldReturnDifferentInstancesForDifferentThreads() throws InterruptedException {
+    TelemetryUsageInfo mainThreadInstance = TelemetryUsageInfo.getInstance();
+
+    final TelemetryUsageInfo[] otherThreadInstance = new TelemetryUsageInfo[1];
+    CountDownLatch latch = new CountDownLatch(1);
+
+    Thread otherThread = new Thread(() -> {
+      otherThreadInstance[0] = TelemetryUsageInfo.getInstance();
+      latch.countDown();
+    });
+
+    otherThread.start();
+    boolean awaitResult = latch.await(5, TimeUnit.SECONDS);
+    assertTrue(awaitResult);
+
+    assertNotNull(otherThreadInstance[0]);
+    assertNotSame(mainThreadInstance, otherThreadInstance[0]);
+  }
+
+  /**
+   * Test thread safety with multiple concurrent threads
+   *
+   * @throws InterruptedException
+   *     if thread execution is interrupted
+   */
+  @Test
+  public void shouldEnsureThreadSafetyWithMultipleConcurrentThreads() throws InterruptedException {
+    final int threadCount = 10;
+    final CountDownLatch startLatch = new CountDownLatch(1);
+    final CountDownLatch completeLatch = new CountDownLatch(threadCount);
+    final AtomicInteger uniqueInstances = new AtomicInteger(0);
+
+    ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+
+    for (int i = 0; i < threadCount; i++) {
+      final int threadIndex = i;
+      executor.submit(() -> {
+        try {
+          boolean startAwaitResult = startLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+          assertTrue(startAwaitResult);
+
+          TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+          String sessionId = SESSION_PREFIX + threadIndex;
+          instance.setSessionId(sessionId);
+
+          // Verify each thread gets its own instance
+          if (sessionId.equals(instance.getSessionId())) {
+            uniqueInstances.incrementAndGet();
+          }
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        } finally {
+          completeLatch.countDown();
         }
-        if (mockedUtilSql != null) {
-            mockedUtilSql.close();
-        }
-        if (mockedQueryTimeOutUtil != null) {
-            mockedQueryTimeOutUtil.close();
-        }
-        if (mocks != null) {
-            mocks.close();
-        }
+      });
     }
 
-    /**
-     * Test that getInstance returns a non-null instance
-     */
-    @Test
-    public void shouldReturnNonNullInstance() {
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        assertNotNull(instance);
-    }
+    startLatch.countDown();
+    boolean completeAwaitResult = completeLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+    assertTrue(completeAwaitResult);
+    executor.shutdown();
 
-    /**
-     * Test that getInstance returns the same instance for the same thread
-     */
-    @Test
-    public void shouldReturnSameInstanceForSameThread() {
-        TelemetryUsageInfo instance1 = TelemetryUsageInfo.getInstance();
-        TelemetryUsageInfo instance2 = TelemetryUsageInfo.getInstance();
-        
-        assertEquals(instance1, instance2);
-    }
+    assertEquals(threadCount, uniqueInstances.get());
+  }
 
-    /**
-     * Test that different threads get different instances
-     * 
-     * @throws InterruptedException if thread execution is interrupted
-     */
-    @Test
-    public void shouldReturnDifferentInstancesForDifferentThreads() throws InterruptedException {
-        TelemetryUsageInfo mainThreadInstance = TelemetryUsageInfo.getInstance();
-        
-        final TelemetryUsageInfo[] otherThreadInstance = new TelemetryUsageInfo[1];
-        CountDownLatch latch = new CountDownLatch(1);
-        
-        Thread otherThread = new Thread(() -> {
-            otherThreadInstance[0] = TelemetryUsageInfo.getInstance();
-            latch.countDown();
-        });
-        
-        otherThread.start();
-        boolean awaitResult = latch.await(5, TimeUnit.SECONDS);
-        assertTrue(awaitResult);
-        
-        assertNotNull(otherThreadInstance[0]);
-        assertNotSame(mainThreadInstance, otherThreadInstance[0]);
-    }
+  /**
+   * Test clear method removes the thread-local instance
+   */
+  @Test
+  public void shouldRemoveThreadLocalInstanceOnClear() {
+    TelemetryUsageInfo instance1 = TelemetryUsageInfo.getInstance();
+    instance1.setSessionId(TEST_SESSION);
 
-    /**
-     * Test thread safety with multiple concurrent threads
-     * 
-     * @throws InterruptedException if thread execution is interrupted
-     */
-    @Test
-    public void shouldEnsureThreadSafetyWithMultipleConcurrentThreads() throws InterruptedException {
-        final int threadCount = 10;
-        final CountDownLatch startLatch = new CountDownLatch(1);
-        final CountDownLatch completeLatch = new CountDownLatch(threadCount);
-        final AtomicInteger uniqueInstances = new AtomicInteger(0);
-        
-        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-        
-        for (int i = 0; i < threadCount; i++) {
-            final int threadIndex = i;
-            executor.submit(() -> {
-                try {
-                    boolean startAwaitResult = startLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-                    assertTrue(startAwaitResult);
-                    
-                    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-                    String sessionId = SESSION_PREFIX + threadIndex;
-                    instance.setSessionId(sessionId);
-                    
-                    // Verify each thread gets its own instance
-                    if (sessionId.equals(instance.getSessionId())) {
-                        uniqueInstances.incrementAndGet();
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                } finally {
-                    completeLatch.countDown();
-                }
-            });
-        }
-        
-        startLatch.countDown();
-        boolean completeAwaitResult = completeLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        assertTrue(completeAwaitResult);
-        executor.shutdown();
-        
-        assertEquals(threadCount, uniqueInstances.get());
-    }
+    TelemetryUsageInfo.clear();
 
-    /**
-     * Test clear method removes the thread-local instance
-     */
-    @Test
-    public void shouldRemoveThreadLocalInstanceOnClear() {
-        TelemetryUsageInfo instance1 = TelemetryUsageInfo.getInstance();
-        instance1.setSessionId(TEST_SESSION);
-        
-        TelemetryUsageInfo.clear();
-        
-        TelemetryUsageInfo instance2 = TelemetryUsageInfo.getInstance();
-        assertNotSame(instance1, instance2);
-        assertNull(instance2.getSessionId());
-    }
+    TelemetryUsageInfo instance2 = TelemetryUsageInfo.getInstance();
+    assertNotSame(instance1, instance2);
+    assertNull(instance2.getSessionId());
+  }
 
-    /**
-     * Test initial state of new instance
-     */
-    @Test
-    public void shouldHaveCorrectInitialState() {
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        
-        assertNull(instance.getSessionId());
-        assertNull(instance.getCommand());
-        assertNull(instance.getUserId());
-        assertNull(instance.getModuleId());
-        assertNull(instance.getObjecttype());
-        assertNull(instance.getObjectId());
-        assertNull(instance.getClassname());
-        assertNotNull(instance.getJsonObject());
-        assertTrue(instance.getTimeMillis() > 0);
-    }
+  /**
+   * Test initial state of new instance
+   */
+  @Test
+  public void shouldHaveCorrectInitialState() {
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
 
-    /**
-     * Test sessionId getter and setter
-     */
-    @Test
-    public void shouldSetAndGetSessionId() {
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        String sessionId = "test-session-123";
-        
-        instance.setSessionId(sessionId);
-        assertEquals(sessionId, instance.getSessionId());
-    }
+    assertNull(instance.getSessionId());
+    assertNull(instance.getCommand());
+    assertNull(instance.getUserId());
+    assertNull(instance.getModuleId());
+    assertNull(instance.getObjecttype());
+    assertNull(instance.getObjectId());
+    assertNull(instance.getClassname());
+    assertNotNull(instance.getJsonObject());
+    assertTrue(instance.getTimeMillis() > 0);
+  }
 
-    /**
-     * Test command getter and setter
-     */
-    @Test
-    public void shouldSetAndGetCommand() {
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        
-        instance.setCommand(TEST_COMMAND);
-        assertEquals(TEST_COMMAND, instance.getCommand());
-    }
+  /**
+   * Test sessionId getter and setter
+   */
+  @Test
+  public void shouldSetAndGetSessionId() {
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    String sessionId = "test-session-123";
 
-    /**
-     * Test userId getter and setter
-     */
-    @Test
-    public void shouldSetAndGetUserId() {
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        String userId = "test-user-123";
-        
-        instance.setUserId(userId);
-        assertEquals(userId, instance.getUserId());
-    }
+    instance.setSessionId(sessionId);
+    assertEquals(sessionId, instance.getSessionId());
+  }
 
-    /**
-     * Test moduleId getter and setter
-     */
-    @Test
-    public void shouldSetAndGetModuleId() {
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        String moduleId = "test-module-123";
-        
-        instance.setModuleId(moduleId);
-        assertEquals(moduleId, instance.getModuleId());
-    }
+  /**
+   * Test command getter and setter
+   */
+  @Test
+  public void shouldSetAndGetCommand() {
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
 
-    /**
-     * Test objecttype getter and setter
-     */
-    @Test
-    public void shouldSetAndGetObjecttype() {
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        
-        instance.setObjecttype(OBJECT_TYPE_PROCESS);
-        assertEquals(OBJECT_TYPE_PROCESS, instance.getObjecttype());
-    }
+    instance.setCommand(TEST_COMMAND);
+    assertEquals(TEST_COMMAND, instance.getCommand());
+  }
 
-    /**
-     * Test objectId getter and setter
-     */
-    @Test
-    public void shouldSetAndGetObjectId() {
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        String objectId = "test-object-123";
-        
-        instance.setObjectId(objectId);
-        assertEquals(objectId, instance.getObjectId());
-    }
+  /**
+   * Test userId getter and setter
+   */
+  @Test
+  public void shouldSetAndGetUserId() {
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    String userId = "test-user-123";
 
-    /**
-     * Test classname getter and setter
-     */
-    @Test
-    public void shouldSetAndGetClassname() {
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        String classname = "com.test.TestClass";
-        
-        instance.setClassname(classname);
-        assertEquals(classname, instance.getClassname());
-    }
+    instance.setUserId(userId);
+    assertEquals(userId, instance.getUserId());
+  }
 
-    /**
-     * Test timeMillis getter and setter
-     */
-    @Test
-    public void shouldSetAndGetTimeMillis() {
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        long timeMillis = System.currentTimeMillis();
-        
-        instance.setTimeMillis(timeMillis);
-        assertEquals(timeMillis, instance.getTimeMillis());
-    }
+  /**
+   * Test moduleId getter and setter
+   */
+  @Test
+  public void shouldSetAndGetModuleId() {
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    String moduleId = "test-module-123";
 
-    /**
-     * Test jsonObject getter and setter
-     * 
-     * @throws JSONException if there's an error manipulating the JSON object
-     */
-    @Test
-    public void shouldSetAndGetJsonObject() throws JSONException {
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("key", "value");
-        
-        instance.setJsonObject(jsonObject);
-        assertEquals(jsonObject, instance.getJsonObject());
-        assertEquals("value", instance.getJsonObject().getString("key"));
-    }
+    instance.setModuleId(moduleId);
+    assertEquals(moduleId, instance.getModuleId());
+  }
 
-    /**
-     * Test saveUsageAudit with null sessionId
-     * 
-     * @throws Exception if there's an error during the test execution
-     */
-    @Test
-    public void shouldSkipSaveUsageAuditWithNullSessionId() throws Exception {
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        instance.setSessionId(null);
-        instance.setCommand(TEST_COMMAND);
-        
-        // Should not throw exception, just skip silently
-        instance.saveUsageAudit();
-        
-        // Verify no database operations were performed
-        verify(mockConnectionProvider, never()).getPreparedStatement(anyString());
-    }
+  /**
+   * Test objecttype getter and setter
+   */
+  @Test
+  public void shouldSetAndGetObjecttype() {
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
 
-    /**
-     * Test saveUsageAudit with empty sessionId
-     * 
-     * @throws Exception if there's an error during the test execution
-     */
-    @Test
-    public void shouldSkipSaveUsageAuditWithEmptySessionId() throws Exception {
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        instance.setSessionId("");
-        instance.setCommand(TEST_COMMAND);
-        
-        // Should not throw exception, just skip silently
-        instance.saveUsageAudit();
-        
-        // Verify no database operations were performed
-        verify(mockConnectionProvider, never()).getPreparedStatement(anyString());
-    }
+    instance.setObjecttype(OBJECT_TYPE_PROCESS);
+    assertEquals(OBJECT_TYPE_PROCESS, instance.getObjecttype());
+  }
 
-    /**
-     * Test saveUsageAudit with null command
-     * 
-     * @throws Exception if there's an error during the test execution
-     */
-    @Test
-    public void shouldSkipSaveUsageAuditWithNullCommand() throws Exception {
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        instance.setSessionId(TEST_SESSION);
-        instance.setCommand(null);
-        
-        // Should not throw exception, just skip silently
-        instance.saveUsageAudit();
-        
-        // Verify no database operations were performed
-        verify(mockConnectionProvider, never()).getPreparedStatement(anyString());
-    }
+  /**
+   * Test objectId getter and setter
+   */
+  @Test
+  public void shouldSetAndGetObjectId() {
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    String objectId = "test-object-123";
 
-    /**
-     * Test saveUsageAudit with valid data and SessionInfo fallbacks
-     * 
-     * @throws Exception if there's an error during the test execution
-     */
-    @Test
-    public void shouldSaveUsageAuditWithSessionInfoFallbacks() throws Exception {
-        // Setup
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        instance.setSessionId(TEST_SESSION);
-        instance.setCommand(TEST_COMMAND);
-        
-        // Mock SessionInfo static methods
-        mockedSessionInfo.when(SessionInfo::getUserId).thenReturn("session-user-id");
-        mockedSessionInfo.when(SessionInfo::getModuleId).thenReturn("session-module-id");
-        mockedSessionInfo.when(SessionInfo::getProcessType).thenReturn("session-process-type");
-        mockedSessionInfo.when(SessionInfo::getProcessId).thenReturn("session-process-id");
-        mockedSessionInfo.when(SessionInfo::getQueryProfile).thenReturn(DEFAULT_PROFILE);
-        
-        // Test with mocked static method using new signature
-        try (MockedStatic<TelemetryUsageInfo> mockedTelemetry = mockStatic(TelemetryUsageInfo.class)) {
-            mockedTelemetry.when(() -> TelemetryUsageInfo.insertUsageAudit(
-                    any(ConnectionProvider.class), any(TelemetryUsageInfo.UsageAuditData.class)))
-                    .thenReturn(1);
-            
-            // Execute
-            instance.saveUsageAudit();
-            
-            // Verify SessionInfo methods were called
-            mockedSessionInfo.verify(SessionInfo::getUserId, times(1));
-            mockedSessionInfo.verify(SessionInfo::getModuleId, times(1));
-            mockedSessionInfo.verify(SessionInfo::getProcessType, times(1));
-            mockedSessionInfo.verify(SessionInfo::getProcessId, times(1));
-        }
-    }
+    instance.setObjectId(objectId);
+    assertEquals(objectId, instance.getObjectId());
+  }
 
-    /**
-     * Test saveUsageAudit with pre-set values (no SessionInfo fallbacks needed)
-     * 
-     * @throws Exception if there's an error during the test execution
-     */
-    @Test
-    public void shouldSaveUsageAuditWithPreSetValues() throws Exception {
-        // Setup
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        instance.setSessionId(TEST_SESSION);
-        instance.setCommand(TEST_COMMAND);
-        instance.setUserId(TEST_USER);
-        instance.setModuleId(TEST_MODULE);
-        instance.setObjecttype(OBJECT_TYPE_PROCESS);
-        instance.setObjectId(TEST_OBJECT);
-        instance.setClassname(TEST_CLASS);
-        instance.setTimeMillis(TEST_TIME);
-        
-        // Test with mocked static method using new signature
-        try (MockedStatic<TelemetryUsageInfo> mockedTelemetry = mockStatic(TelemetryUsageInfo.class)) {
-            mockedTelemetry.when(() -> TelemetryUsageInfo.insertUsageAudit(
-                    any(ConnectionProvider.class), any(TelemetryUsageInfo.UsageAuditData.class)))
-                    .thenReturn(1);
-            
-            // Execute
-            instance.saveUsageAudit();
-            
-            // Verify SessionInfo methods were NOT called since values were pre-set
-            mockedSessionInfo.verify(SessionInfo::getUserId, never());
-            mockedSessionInfo.verify(SessionInfo::getModuleId, never());
-            mockedSessionInfo.verify(SessionInfo::getProcessType, never());
-        }
-    }
+  /**
+   * Test classname getter and setter
+   */
+  @Test
+  public void shouldSetAndGetClassname() {
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    String classname = "com.test.TestClass";
 
-    /**
-     * Test insertUsageAudit static method success
-     * 
-     * @throws Exception if there's an error during the test execution
-     */
-    @Test
-    public void shouldInsertUsageAuditSuccessfully() throws Exception {
-        // Setup
-        when(mockConnectionProvider.getPreparedStatement(anyString())).thenReturn(mockPreparedStatement);
-        when(mockPreparedStatement.executeUpdate()).thenReturn(1);
-        
-        mockedSessionInfo.when(SessionInfo::getQueryProfile).thenReturn(DEFAULT_PROFILE);
-        
-        // Mock UtilSql.setValue to do nothing
-        mockedUtilSql.when(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()))
-                .thenAnswer(invocation -> null);
-        
-        // Create UsageAuditData using Builder
-        TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
-                .userId(USER1)
-                .sessionId(SESSION1)
-                .objectId(OBJECT1)
-                .moduleId(MODULE1)
-                .command(COMMAND1)
-                .classname(TEST_CLASS)
-                .objecttype(OBJECT_TYPE_PROCESS)
-                .time(TIME_123456)
-                .json(JSON_TEST_DATA)
-                .build();
-        
-        // Execute
-        int result = TelemetryUsageInfo.insertUsageAudit(mockConnectionProvider, auditData);
-        
-        // Verify
-        assertEquals(1, result);
-        verify(mockConnectionProvider).getPreparedStatement(anyString());
-        verify(mockQueryTimeOutUtil).setQueryTimeOut(eq(mockPreparedStatement), eq(DEFAULT_PROFILE));
-        verify(mockPreparedStatement).executeUpdate();
-        verify(mockConnectionProvider).releasePreparedStatement(mockPreparedStatement);
-        
-        // Verify UtilSql.setValue was called 10 times (for all parameters)
-        mockedUtilSql.verify(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()), 
-                times(10));
-    }
+    instance.setClassname(classname);
+    assertEquals(classname, instance.getClassname());
+  }
 
-    /**
-     * Test insertUsageAudit static method with SQLException
-     * 
-     * @throws Exception if there's an error during the test execution
-     */
-    @Test
-    public void shouldThrowServletExceptionOnSQLException() throws Exception {
-        // Setup
-        SQLException sqlException = new SQLException("Database error", "42000", 12345);
-        when(mockConnectionProvider.getPreparedStatement(anyString())).thenReturn(mockPreparedStatement);
-        when(mockPreparedStatement.executeUpdate()).thenThrow(sqlException);
-        
-        mockedSessionInfo.when(SessionInfo::getQueryProfile).thenReturn(DEFAULT_PROFILE);
-        
-        // Mock UtilSql.setValue to do nothing
-        mockedUtilSql.when(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()))
-                .thenAnswer(invocation -> null);
-        
-        // Create UsageAuditData using Builder
-        TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
-                .userId(USER1)
-                .sessionId(SESSION1)
-                .objectId(OBJECT1)
-                .moduleId(MODULE1)
-                .command(COMMAND1)
-                .classname(TEST_CLASS)
-                .objecttype(OBJECT_TYPE_PROCESS)
-                .time(TIME_123456)
-                .json(JSON_TEST_DATA)
-                .build();
-        
-        // Execute and verify
-        ServletException exception = assertThrows(ServletException.class, () ->
-            TelemetryUsageInfo.insertUsageAudit(mockConnectionProvider, auditData)
-        );
-        
-        assertTrue(exception.getMessage().contains("@CODE=12345@"));
-        assertTrue(exception.getMessage().contains("Database error"));
-        verify(mockConnectionProvider).releasePreparedStatement(mockPreparedStatement);
-    }
+  /**
+   * Test timeMillis getter and setter
+   */
+  @Test
+  public void shouldSetAndGetTimeMillis() {
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    long timeMillis = System.currentTimeMillis();
 
-    /**
-     * Test insertUsageAudit static method with general Exception
-     * 
-     * @throws Exception if there's an error during the test execution
-     */
-    @Test
-    public void shouldThrowServletExceptionOnGeneralException() throws Exception {
-        // Setup
-        RuntimeException runtimeException = new RuntimeException("General error");
-        when(mockConnectionProvider.getPreparedStatement(anyString())).thenReturn(mockPreparedStatement);
-        when(mockPreparedStatement.executeUpdate()).thenThrow(runtimeException);
-        
-        mockedSessionInfo.when(SessionInfo::getQueryProfile).thenReturn(DEFAULT_PROFILE);
-        
-        // Mock UtilSql.setValue to do nothing
-        mockedUtilSql.when(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()))
-                .thenAnswer(invocation -> null);
-        
-        // Create UsageAuditData using Builder
-        TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
-                .userId(USER1)
-                .sessionId(SESSION1)
-                .objectId(OBJECT1)
-                .moduleId(MODULE1)
-                .command(COMMAND1)
-                .classname(TEST_CLASS)
-                .objecttype(OBJECT_TYPE_PROCESS)
-                .time(TIME_123456)
-                .json(JSON_TEST_DATA)
-                .build();
-        
-        // Execute and verify
-        ServletException exception = assertThrows(ServletException.class, () ->
-            TelemetryUsageInfo.insertUsageAudit(mockConnectionProvider, auditData)
-        );
-        
-        assertTrue(exception.getMessage().contains("@CODE=@"));
-        assertTrue(exception.getMessage().contains("General error"));
-        verify(mockConnectionProvider).releasePreparedStatement(mockPreparedStatement);
-    }
+    instance.setTimeMillis(timeMillis);
+    assertEquals(timeMillis, instance.getTimeMillis());
+  }
 
-    /**
-     * Test insertUsageAudit handles release statement exception
-     * 
-     * @throws Exception if there's an error during the test execution
-     */
-    @Test
-    public void shouldHandleReleaseStatementException() throws Exception {
-        // Setup
-        when(mockConnectionProvider.getPreparedStatement(anyString())).thenReturn(mockPreparedStatement);
-        when(mockPreparedStatement.executeUpdate()).thenReturn(1);
-        doThrow(new SQLException("Release error")).when(mockConnectionProvider).releasePreparedStatement(mockPreparedStatement);
-        
-        mockedSessionInfo.when(SessionInfo::getQueryProfile).thenReturn(DEFAULT_PROFILE);
-        
-        // Mock UtilSql.setValue to do nothing
-        mockedUtilSql.when(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()))
-                .thenAnswer(invocation -> null);
-        
-        // Create UsageAuditData using Builder
-        TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
-                .userId(USER1)
-                .sessionId(SESSION1)
-                .objectId(OBJECT1)
-                .moduleId(MODULE1)
-                .command(COMMAND1)
-                .classname(TEST_CLASS)
-                .objecttype(OBJECT_TYPE_PROCESS)
-                .time(TIME_123456)
-                .json(JSON_TEST_DATA)
-                .build();
-        
-        // Execute - should not throw exception despite release error
-        int result = TelemetryUsageInfo.insertUsageAudit(mockConnectionProvider, auditData);
-        
-        // Verify
-        assertEquals(1, result);
-        verify(mockConnectionProvider).releasePreparedStatement(mockPreparedStatement);
-    }
+  /**
+   * Test jsonObject getter and setter
+   *
+   * @throws JSONException
+   *     if there's an error manipulating the JSON object
+   */
+  @Test
+  public void shouldSetAndGetJsonObject() throws JSONException {
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    JSONObject jsonObject = new JSONObject();
+    jsonObject.put("key", "value");
 
-    /**
-     * Test saveUsageAudit with missing userId from SessionInfo
-     * 
-     * @throws Exception if there's an error during the test execution
-     */
-    @Test
-    public void shouldSkipSaveUsageAuditWithMissingUserIdFromSessionInfo() throws Exception {
-        // Setup
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        instance.setSessionId(TEST_SESSION);
-        instance.setCommand(TEST_COMMAND);
-        
-        // Mock SessionInfo to return null/empty userId
-        mockedSessionInfo.when(SessionInfo::getUserId).thenReturn(null);
-        
-        // Execute - should skip silently due to missing userId
-        instance.saveUsageAudit();
-        
-        // Verify no database operations were performed
-        verify(mockConnectionProvider, never()).getPreparedStatement(anyString());
-    }
+    instance.setJsonObject(jsonObject);
+    assertEquals(jsonObject, instance.getJsonObject());
+    assertEquals("value", instance.getJsonObject().getString("key"));
+  }
 
-    /**
-     * Test saveUsageAudit with missing objectId from SessionInfo
-     * 
-     * @throws Exception if there's an error during the test execution
-     */
-    @Test
-    public void shouldSkipSaveUsageAuditWithMissingObjectIdFromSessionInfo() throws Exception {
-        // Setup
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        instance.setSessionId(TEST_SESSION);
-        instance.setCommand(TEST_COMMAND);
-        
-        // Mock SessionInfo
-        mockedSessionInfo.when(SessionInfo::getUserId).thenReturn("user-id");
-        mockedSessionInfo.when(SessionInfo::getModuleId).thenReturn("module-id");
-        mockedSessionInfo.when(SessionInfo::getProcessType).thenReturn(OBJECT_TYPE_PROCESS);
-        mockedSessionInfo.when(SessionInfo::getProcessId).thenReturn(null); // Missing objectId
-        
-        // Execute - should skip silently due to missing objectId
-        instance.saveUsageAudit();
-        
-        // Verify no database operations were performed
-        verify(mockConnectionProvider, never()).getPreparedStatement(anyString());
-    }
+  /**
+   * Test saveUsageAudit with null sessionId
+   *
+   * @throws Exception
+   *     if there's an error during the test execution
+   */
+  @Test
+  public void shouldSkipSaveUsageAuditWithNullSessionId() throws Exception {
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    instance.setSessionId(null);
+    instance.setCommand(TEST_COMMAND);
 
-    /**
-     * Test that default objecttype is set to "P" when null
-     * 
-     * @throws Exception if there's an error during the test execution
-     */
-    @Test
-    public void shouldSetDefaultObjectTypeWhenNull() throws Exception {
-        // Setup
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        instance.setSessionId(TEST_SESSION);
-        instance.setCommand(TEST_COMMAND);
-        instance.setUserId(TEST_USER);
-        instance.setModuleId(TEST_MODULE);
-        instance.setObjectId(TEST_OBJECT);
-        
-        // Mock SessionInfo to return null for process type
-        mockedSessionInfo.when(SessionInfo::getProcessType).thenReturn(null);
-        
-        // Test with mocked static method using new signature
-        try (MockedStatic<TelemetryUsageInfo> mockedTelemetry = mockStatic(TelemetryUsageInfo.class)) {
-            mockedTelemetry.when(() -> TelemetryUsageInfo.insertUsageAudit(
-                    any(ConnectionProvider.class), any(TelemetryUsageInfo.UsageAuditData.class)))
-                    .thenReturn(1);
-            
-            // Execute
-            instance.saveUsageAudit();
-            
-            // Verify default objecttype "P" was used
-            mockedTelemetry.verify(() -> TelemetryUsageInfo.insertUsageAudit(
-                    any(ConnectionProvider.class), any(TelemetryUsageInfo.UsageAuditData.class)), 
-                    times(1));
-        }
-    }
+    // Should not throw exception, just skip silently
+    instance.saveUsageAudit();
 
-    /**
-     * Test saveUsageAudit sets timeMillis if it's 0
-     * 
-     * @throws Exception if there's an error during the test execution
-     */
-    @Test
-    public void shouldSetTimeMillisIfZero() throws Exception {
-        // Setup
-        TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
-        instance.setSessionId(TEST_SESSION);
-        instance.setCommand(TEST_COMMAND);
-        instance.setUserId(TEST_USER);
-        instance.setModuleId(TEST_MODULE);
-        instance.setObjecttype(OBJECT_TYPE_PROCESS);
-        instance.setObjectId(TEST_OBJECT);
-        instance.setTimeMillis(0); // Set to 0 to trigger update
-        
-        long beforeTime = System.currentTimeMillis();
-        
-        // Test with mocked static method using new signature
-        try (MockedStatic<TelemetryUsageInfo> mockedTelemetry = mockStatic(TelemetryUsageInfo.class)) {
-            mockedTelemetry.when(() -> TelemetryUsageInfo.insertUsageAudit(
-                    any(ConnectionProvider.class), any(TelemetryUsageInfo.UsageAuditData.class)))
-                    .thenReturn(1);
-            
-            // Execute
-            instance.saveUsageAudit();
-            
-            long afterTime = System.currentTimeMillis();
-            
-            // Verify timeMillis was updated
-            assertTrue(instance.getTimeMillis() >= beforeTime);
-            assertTrue(instance.getTimeMillis() <= afterTime);
-        }
-    }
+    // Verify no database operations were performed
+    verify(mockConnectionProvider, never()).getPreparedStatement(anyString());
+  }
 
-    /**
-     * Test UsageAuditData Builder pattern
-     */
-    @Test
-    public void shouldBuildUsageAuditDataWithBuilder() {
-        // Execute
-        TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
-                .userId(USER1)
-                .sessionId(SESSION1)
-                .objectId(OBJECT1)
-                .moduleId(MODULE1)
-                .command(COMMAND1)
-                .classname(TEST_CLASS)
-                .objecttype(OBJECT_TYPE_PROCESS)
-                .time(TIME_123456)
-                .json(JSON_TEST_DATA)
-                .build();
-        
-        // Verify
-        assertNotNull(auditData);
-        assertEquals(USER1, auditData.getUserId());
-        assertEquals(SESSION1, auditData.getSessionId());
-        assertEquals(OBJECT1, auditData.getObjectId());
-        assertEquals(MODULE1, auditData.getModuleId());
-        assertEquals(COMMAND1, auditData.getCommand());
-        assertEquals(TEST_CLASS, auditData.getClassname());
-        assertEquals(OBJECT_TYPE_PROCESS, auditData.getObjecttype());
-        assertEquals(TIME_123456, auditData.getTime());
-        assertEquals(JSON_TEST_DATA, auditData.getJson());
-    }
+  /**
+   * Test saveUsageAudit with empty sessionId
+   *
+   * @throws Exception
+   *     if there's an error during the test execution
+   */
+  @Test
+  public void shouldSkipSaveUsageAuditWithEmptySessionId() throws Exception {
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    instance.setSessionId("");
+    instance.setCommand(TEST_COMMAND);
 
-    /**
-     * Test UsageAuditData Builder with partial data
-     */
-    @Test
-    public void shouldBuildUsageAuditDataWithPartialData() {
-        // Execute
-        TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
-                .userId(USER1)
-                .sessionId(SESSION1)
-                .command(COMMAND1)
-                .build();
-        
-        // Verify
-        assertNotNull(auditData);
-        assertEquals(USER1, auditData.getUserId());
-        assertEquals(SESSION1, auditData.getSessionId());
-        assertEquals(COMMAND1, auditData.getCommand());
-        assertNull(auditData.getObjectId());
-        assertNull(auditData.getModuleId());
-        assertNull(auditData.getClassname());
-        assertNull(auditData.getObjecttype());
-        assertNull(auditData.getTime());
-        assertNull(auditData.getJson());
+    // Should not throw exception, just skip silently
+    instance.saveUsageAudit();
+
+    // Verify no database operations were performed
+    verify(mockConnectionProvider, never()).getPreparedStatement(anyString());
+  }
+
+  /**
+   * Test saveUsageAudit with null command
+   *
+   * @throws Exception
+   *     if there's an error during the test execution
+   */
+  @Test
+  public void shouldSkipSaveUsageAuditWithNullCommand() throws Exception {
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    instance.setSessionId(TEST_SESSION);
+    instance.setCommand(null);
+
+    // Should not throw exception, just skip silently
+    instance.saveUsageAudit();
+
+    // Verify no database operations were performed
+    verify(mockConnectionProvider, never()).getPreparedStatement(anyString());
+  }
+
+  /**
+   * Test saveUsageAudit with valid data and SessionInfo fallbacks
+   *
+   * @throws Exception
+   *     if there's an error during the test execution
+   */
+  @Test
+  public void shouldSaveUsageAuditWithSessionInfoFallbacks() throws Exception {
+    // Setup
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    instance.setSessionId(TEST_SESSION);
+    instance.setCommand(TEST_COMMAND);
+
+    // Mock SessionInfo static methods
+    mockedSessionInfo.when(SessionInfo::getUserId).thenReturn("session-user-id");
+    mockedSessionInfo.when(SessionInfo::getModuleId).thenReturn("session-module-id");
+    mockedSessionInfo.when(SessionInfo::getProcessType).thenReturn("session-process-type");
+    mockedSessionInfo.when(SessionInfo::getProcessId).thenReturn("session-process-id");
+    mockedSessionInfo.when(SessionInfo::getQueryProfile).thenReturn(DEFAULT_PROFILE);
+
+    // Test with mocked static method using new signature
+    try (MockedStatic<TelemetryUsageInfo> mockedTelemetry = mockStatic(TelemetryUsageInfo.class)) {
+      mockedTelemetry.when(() -> TelemetryUsageInfo.insertUsageAudit(
+              any(ConnectionProvider.class), any(TelemetryUsageInfo.UsageAuditData.class)))
+          .thenReturn(1);
+
+      // Execute
+      instance.saveUsageAudit();
+
+      // Verify SessionInfo methods were called
+      mockedSessionInfo.verify(SessionInfo::getUserId, times(1));
+      mockedSessionInfo.verify(SessionInfo::getModuleId, times(1));
+      mockedSessionInfo.verify(SessionInfo::getProcessType, times(1));
+      mockedSessionInfo.verify(SessionInfo::getProcessId, times(1));
     }
+  }
+
+  /**
+   * Test saveUsageAudit with pre-set values (no SessionInfo fallbacks needed)
+   *
+   * @throws Exception
+   *     if there's an error during the test execution
+   */
+  @Test
+  public void shouldSaveUsageAuditWithPreSetValues() throws Exception {
+    // Setup
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    instance.setSessionId(TEST_SESSION);
+    instance.setCommand(TEST_COMMAND);
+    instance.setUserId(TEST_USER);
+    instance.setModuleId(TEST_MODULE);
+    instance.setObjecttype(OBJECT_TYPE_PROCESS);
+    instance.setObjectId(TEST_OBJECT);
+    instance.setClassname(TEST_CLASS);
+    instance.setTimeMillis(TEST_TIME);
+
+    // Test with mocked static method using new signature
+    try (MockedStatic<TelemetryUsageInfo> mockedTelemetry = mockStatic(TelemetryUsageInfo.class)) {
+      mockedTelemetry.when(() -> TelemetryUsageInfo.insertUsageAudit(
+              any(ConnectionProvider.class), any(TelemetryUsageInfo.UsageAuditData.class)))
+          .thenReturn(1);
+
+      // Execute
+      instance.saveUsageAudit();
+
+      // Verify SessionInfo methods were NOT called since values were pre-set
+      mockedSessionInfo.verify(SessionInfo::getUserId, never());
+      mockedSessionInfo.verify(SessionInfo::getModuleId, never());
+      mockedSessionInfo.verify(SessionInfo::getProcessType, never());
+    }
+  }
+
+  /**
+   * Test insertUsageAudit static method success
+   *
+   * @throws Exception
+   *     if there's an error during the test execution
+   */
+  @Test
+  public void shouldInsertUsageAuditSuccessfully() throws Exception {
+    // Setup
+    when(mockConnectionProvider.getPreparedStatement(anyString())).thenReturn(mockPreparedStatement);
+    when(mockPreparedStatement.executeUpdate()).thenReturn(1);
+
+    mockedSessionInfo.when(SessionInfo::getQueryProfile).thenReturn(DEFAULT_PROFILE);
+
+    // Mock UtilSql.setValue to do nothing
+    mockedUtilSql.when(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()))
+        .thenAnswer(invocation -> null);
+
+    // Create UsageAuditData using Builder
+    TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
+        .userId(USER1)
+        .sessionId(SESSION1)
+        .objectId(OBJECT1)
+        .moduleId(MODULE1)
+        .command(COMMAND1)
+        .classname(TEST_CLASS)
+        .objecttype(OBJECT_TYPE_PROCESS)
+        .time(TIME_123456)
+        .json(JSON_TEST_DATA)
+        .build();
+
+    // Execute
+    int result = TelemetryUsageInfo.insertUsageAudit(mockConnectionProvider, auditData);
+
+    // Verify
+    assertEquals(1, result);
+    verify(mockConnectionProvider).getPreparedStatement(anyString());
+    verify(mockQueryTimeOutUtil).setQueryTimeOut(eq(mockPreparedStatement), eq(DEFAULT_PROFILE));
+    verify(mockPreparedStatement).executeUpdate();
+    verify(mockConnectionProvider).releasePreparedStatement(mockPreparedStatement);
+
+    // Verify UtilSql.setValue was called 10 times (for all parameters)
+    mockedUtilSql.verify(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()),
+        times(10));
+  }
+
+  /**
+   * Test insertUsageAudit static method with SQLException
+   *
+   * @throws Exception
+   *     if there's an error during the test execution
+   */
+  @Test
+  public void shouldThrowServletExceptionOnSQLException() throws Exception {
+    // Setup
+    SQLException sqlException = new SQLException("Database error", "42000", 12345);
+    when(mockConnectionProvider.getPreparedStatement(anyString())).thenReturn(mockPreparedStatement);
+    when(mockPreparedStatement.executeUpdate()).thenThrow(sqlException);
+
+    mockedSessionInfo.when(SessionInfo::getQueryProfile).thenReturn(DEFAULT_PROFILE);
+
+    // Mock UtilSql.setValue to do nothing
+    mockedUtilSql.when(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()))
+        .thenAnswer(invocation -> null);
+
+    // Create UsageAuditData using Builder
+    TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
+        .userId(USER1)
+        .sessionId(SESSION1)
+        .objectId(OBJECT1)
+        .moduleId(MODULE1)
+        .command(COMMAND1)
+        .classname(TEST_CLASS)
+        .objecttype(OBJECT_TYPE_PROCESS)
+        .time(TIME_123456)
+        .json(JSON_TEST_DATA)
+        .build();
+
+    // Execute and verify
+    ServletException exception = assertThrows(ServletException.class, () ->
+        TelemetryUsageInfo.insertUsageAudit(mockConnectionProvider, auditData)
+    );
+
+    assertTrue(exception.getMessage().contains("@CODE=12345@"));
+    assertTrue(exception.getMessage().contains("Database error"));
+    verify(mockConnectionProvider).releasePreparedStatement(mockPreparedStatement);
+  }
+
+  /**
+   * Test insertUsageAudit static method with general Exception
+   *
+   * @throws Exception
+   *     if there's an error during the test execution
+   */
+  @Test
+  public void shouldThrowServletExceptionOnGeneralException() throws Exception {
+    // Setup
+    RuntimeException runtimeException = new RuntimeException("General error");
+    when(mockConnectionProvider.getPreparedStatement(anyString())).thenReturn(mockPreparedStatement);
+    when(mockPreparedStatement.executeUpdate()).thenThrow(runtimeException);
+
+    mockedSessionInfo.when(SessionInfo::getQueryProfile).thenReturn(DEFAULT_PROFILE);
+
+    // Mock UtilSql.setValue to do nothing
+    mockedUtilSql.when(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()))
+        .thenAnswer(invocation -> null);
+
+    // Create UsageAuditData using Builder
+    TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
+        .userId(USER1)
+        .sessionId(SESSION1)
+        .objectId(OBJECT1)
+        .moduleId(MODULE1)
+        .command(COMMAND1)
+        .classname(TEST_CLASS)
+        .objecttype(OBJECT_TYPE_PROCESS)
+        .time(TIME_123456)
+        .json(JSON_TEST_DATA)
+        .build();
+
+    // Execute and verify
+    ServletException exception = assertThrows(ServletException.class, () ->
+        TelemetryUsageInfo.insertUsageAudit(mockConnectionProvider, auditData)
+    );
+
+    assertTrue(exception.getMessage().contains("@CODE=@"));
+    assertTrue(exception.getMessage().contains("General error"));
+    verify(mockConnectionProvider).releasePreparedStatement(mockPreparedStatement);
+  }
+
+  /**
+   * Test insertUsageAudit handles release statement exception
+   *
+   * @throws Exception
+   *     if there's an error during the test execution
+   */
+  @Test
+  public void shouldHandleReleaseStatementException() throws Exception {
+    // Setup
+    when(mockConnectionProvider.getPreparedStatement(anyString())).thenReturn(mockPreparedStatement);
+    when(mockPreparedStatement.executeUpdate()).thenReturn(1);
+    doThrow(new SQLException("Release error")).when(mockConnectionProvider).releasePreparedStatement(
+        mockPreparedStatement);
+
+    mockedSessionInfo.when(SessionInfo::getQueryProfile).thenReturn(DEFAULT_PROFILE);
+
+    // Mock UtilSql.setValue to do nothing
+    mockedUtilSql.when(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()))
+        .thenAnswer(invocation -> null);
+
+    // Create UsageAuditData using Builder
+    TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
+        .userId(USER1)
+        .sessionId(SESSION1)
+        .objectId(OBJECT1)
+        .moduleId(MODULE1)
+        .command(COMMAND1)
+        .classname(TEST_CLASS)
+        .objecttype(OBJECT_TYPE_PROCESS)
+        .time(TIME_123456)
+        .json(JSON_TEST_DATA)
+        .build();
+
+    // Execute - should not throw exception despite release error
+    int result = TelemetryUsageInfo.insertUsageAudit(mockConnectionProvider, auditData);
+
+    // Verify
+    assertEquals(1, result);
+    verify(mockConnectionProvider).releasePreparedStatement(mockPreparedStatement);
+  }
+
+  /**
+   * Test saveUsageAudit with missing userId from SessionInfo
+   *
+   * @throws Exception
+   *     if there's an error during the test execution
+   */
+  @Test
+  public void shouldSkipSaveUsageAuditWithMissingUserIdFromSessionInfo() throws Exception {
+    // Setup
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    instance.setSessionId(TEST_SESSION);
+    instance.setCommand(TEST_COMMAND);
+
+    // Mock SessionInfo to return null/empty userId
+    mockedSessionInfo.when(SessionInfo::getUserId).thenReturn(null);
+
+    // Execute - should skip silently due to missing userId
+    instance.saveUsageAudit();
+
+    // Verify no database operations were performed
+    verify(mockConnectionProvider, never()).getPreparedStatement(anyString());
+  }
+
+  /**
+   * Test saveUsageAudit with missing objectId from SessionInfo
+   *
+   * @throws Exception
+   *     if there's an error during the test execution
+   */
+  @Test
+  public void shouldSkipSaveUsageAuditWithMissingObjectIdFromSessionInfo() throws Exception {
+    // Setup
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    instance.setSessionId(TEST_SESSION);
+    instance.setCommand(TEST_COMMAND);
+
+    // Mock SessionInfo
+    mockedSessionInfo.when(SessionInfo::getUserId).thenReturn("user-id");
+    mockedSessionInfo.when(SessionInfo::getModuleId).thenReturn("module-id");
+    mockedSessionInfo.when(SessionInfo::getProcessType).thenReturn(OBJECT_TYPE_PROCESS);
+    mockedSessionInfo.when(SessionInfo::getProcessId).thenReturn(null); // Missing objectId
+
+    // Execute - should skip silently due to missing objectId
+    instance.saveUsageAudit();
+
+    // Verify no database operations were performed
+    verify(mockConnectionProvider, never()).getPreparedStatement(anyString());
+  }
+
+  /**
+   * Test that default objecttype is set to "P" when null
+   *
+   * @throws Exception
+   *     if there's an error during the test execution
+   */
+  @Test
+  public void shouldSetDefaultObjectTypeWhenNull() throws Exception {
+    // Setup
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    instance.setSessionId(TEST_SESSION);
+    instance.setCommand(TEST_COMMAND);
+    instance.setUserId(TEST_USER);
+    instance.setModuleId(TEST_MODULE);
+    instance.setObjectId(TEST_OBJECT);
+
+    // Mock SessionInfo to return null for process type
+    mockedSessionInfo.when(SessionInfo::getProcessType).thenReturn(null);
+
+    // Test with mocked static method using new signature
+    try (MockedStatic<TelemetryUsageInfo> mockedTelemetry = mockStatic(TelemetryUsageInfo.class)) {
+      mockedTelemetry.when(() -> TelemetryUsageInfo.insertUsageAudit(
+              any(ConnectionProvider.class), any(TelemetryUsageInfo.UsageAuditData.class)))
+          .thenReturn(1);
+
+      // Execute
+      instance.saveUsageAudit();
+
+      // Verify default objecttype "P" was used
+      mockedTelemetry.verify(() -> TelemetryUsageInfo.insertUsageAudit(
+              any(ConnectionProvider.class), any(TelemetryUsageInfo.UsageAuditData.class)),
+          times(1));
+    }
+  }
+
+  /**
+   * Test saveUsageAudit sets timeMillis if it's 0
+   *
+   * @throws Exception
+   *     if there's an error during the test execution
+   */
+  @Test
+  public void shouldSetTimeMillisIfZero() throws Exception {
+    // Setup
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    instance.setSessionId(TEST_SESSION);
+    instance.setCommand(TEST_COMMAND);
+    instance.setUserId(TEST_USER);
+    instance.setModuleId(TEST_MODULE);
+    instance.setObjecttype(OBJECT_TYPE_PROCESS);
+    instance.setObjectId(TEST_OBJECT);
+    instance.setTimeMillis(0); // Set to 0 to trigger update
+
+    long beforeTime = System.currentTimeMillis();
+
+    // Test with mocked static method using new signature
+    try (MockedStatic<TelemetryUsageInfo> mockedTelemetry = mockStatic(TelemetryUsageInfo.class)) {
+      mockedTelemetry.when(() -> TelemetryUsageInfo.insertUsageAudit(
+              any(ConnectionProvider.class), any(TelemetryUsageInfo.UsageAuditData.class)))
+          .thenReturn(1);
+
+      // Execute
+      instance.saveUsageAudit();
+
+      long afterTime = System.currentTimeMillis();
+
+      // Verify timeMillis was updated
+      assertTrue(instance.getTimeMillis() >= beforeTime);
+      assertTrue(instance.getTimeMillis() <= afterTime);
+    }
+  }
+
+  /**
+   * Test UsageAuditData Builder pattern
+   */
+  @Test
+  public void shouldBuildUsageAuditDataWithBuilder() {
+    // Execute
+    TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
+        .userId(USER1)
+        .sessionId(SESSION1)
+        .objectId(OBJECT1)
+        .moduleId(MODULE1)
+        .command(COMMAND1)
+        .classname(TEST_CLASS)
+        .objecttype(OBJECT_TYPE_PROCESS)
+        .time(TIME_123456)
+        .json(JSON_TEST_DATA)
+        .build();
+
+    // Verify
+    assertNotNull(auditData);
+    assertEquals(USER1, auditData.getUserId());
+    assertEquals(SESSION1, auditData.getSessionId());
+    assertEquals(OBJECT1, auditData.getObjectId());
+    assertEquals(MODULE1, auditData.getModuleId());
+    assertEquals(COMMAND1, auditData.getCommand());
+    assertEquals(TEST_CLASS, auditData.getClassname());
+    assertEquals(OBJECT_TYPE_PROCESS, auditData.getObjecttype());
+    assertEquals(TIME_123456, auditData.getTime());
+    assertEquals(JSON_TEST_DATA, auditData.getJson());
+  }
+
+  /**
+   * Test UsageAuditData Builder with partial data
+   */
+  @Test
+  public void shouldBuildUsageAuditDataWithPartialData() {
+    // Execute
+    TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
+        .userId(USER1)
+        .sessionId(SESSION1)
+        .command(COMMAND1)
+        .build();
+
+    // Verify
+    assertNotNull(auditData);
+    assertEquals(USER1, auditData.getUserId());
+    assertEquals(SESSION1, auditData.getSessionId());
+    assertEquals(COMMAND1, auditData.getCommand());
+    assertNull(auditData.getObjectId());
+    assertNull(auditData.getModuleId());
+    assertNull(auditData.getClassname());
+    assertNull(auditData.getObjecttype());
+    assertNull(auditData.getTime());
+    assertNull(auditData.getJson());
+  }
 }
