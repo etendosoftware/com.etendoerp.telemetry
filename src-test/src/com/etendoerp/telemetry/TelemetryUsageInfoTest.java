@@ -80,6 +80,10 @@ public class TelemetryUsageInfoTest {
     private MockedStatic<UtilSql> mockedUtilSql;
     private MockedStatic<QueryTimeOutUtil> mockedQueryTimeOutUtil;
 
+    /**
+     * Sets up test environment before each test.
+     * Initializes mocks and clears thread-local instances.
+     */
     @BeforeEach
     public void setUp() {
         mocks = MockitoAnnotations.openMocks(this);
@@ -95,6 +99,12 @@ public class TelemetryUsageInfoTest {
         when(QueryTimeOutUtil.getInstance()).thenReturn(mockQueryTimeOutUtil);
     }
 
+    /**
+     * Cleans up test environment after each test.
+     * Closes mocks and clears thread-local instances.
+     * 
+     * @throws Exception if cleanup fails
+     */
     @AfterEach
     public void tearDown() throws Exception {
         // Clean up thread-local instances after each test
@@ -136,6 +146,8 @@ public class TelemetryUsageInfoTest {
 
     /**
      * Test that different threads get different instances
+     * 
+     * @throws InterruptedException if thread execution is interrupted
      */
     @Test
     public void shouldReturnDifferentInstancesForDifferentThreads() throws InterruptedException {
@@ -159,6 +171,8 @@ public class TelemetryUsageInfoTest {
 
     /**
      * Test thread safety with multiple concurrent threads
+     * 
+     * @throws InterruptedException if thread execution is interrupted
      */
     @Test
     public void shouldEnsureThreadSafetyWithMultipleConcurrentThreads() throws InterruptedException {
@@ -329,6 +343,8 @@ public class TelemetryUsageInfoTest {
 
     /**
      * Test jsonObject getter and setter
+     * 
+     * @throws JSONException if there's an error manipulating the JSON object
      */
     @Test
     public void shouldSetAndGetJsonObject() throws JSONException {
@@ -343,6 +359,8 @@ public class TelemetryUsageInfoTest {
 
     /**
      * Test saveUsageAudit with null sessionId
+     * 
+     * @throws Exception if there's an error during the test execution
      */
     @Test
     public void shouldSkipSaveUsageAuditWithNullSessionId() throws Exception {
@@ -359,6 +377,8 @@ public class TelemetryUsageInfoTest {
 
     /**
      * Test saveUsageAudit with empty sessionId
+     * 
+     * @throws Exception if there's an error during the test execution
      */
     @Test
     public void shouldSkipSaveUsageAuditWithEmptySessionId() throws Exception {
@@ -375,6 +395,8 @@ public class TelemetryUsageInfoTest {
 
     /**
      * Test saveUsageAudit with null command
+     * 
+     * @throws Exception if there's an error during the test execution
      */
     @Test
     public void shouldSkipSaveUsageAuditWithNullCommand() throws Exception {
@@ -391,6 +413,8 @@ public class TelemetryUsageInfoTest {
 
     /**
      * Test saveUsageAudit with valid data and SessionInfo fallbacks
+     * 
+     * @throws Exception if there's an error during the test execution
      */
     @Test
     public void shouldSaveUsageAuditWithSessionInfoFallbacks() throws Exception {
@@ -425,6 +449,8 @@ public class TelemetryUsageInfoTest {
 
     /**
      * Test saveUsageAudit with pre-set values (no SessionInfo fallbacks needed)
+     * 
+     * @throws Exception if there's an error during the test execution
      */
     @Test
     public void shouldSaveUsageAuditWithPreSetValues() throws Exception {
@@ -457,6 +483,8 @@ public class TelemetryUsageInfoTest {
 
     /**
      * Test insertUsageAudit static method success
+     * 
+     * @throws Exception if there's an error during the test execution
      */
     @Test
     public void shouldInsertUsageAuditSuccessfully() throws Exception {
@@ -500,6 +528,8 @@ public class TelemetryUsageInfoTest {
 
     /**
      * Test insertUsageAudit static method with SQLException
+     * 
+     * @throws Exception if there's an error during the test execution
      */
     @Test
     public void shouldThrowServletExceptionOnSQLException() throws Exception {
@@ -539,6 +569,8 @@ public class TelemetryUsageInfoTest {
 
     /**
      * Test insertUsageAudit static method with general Exception
+     * 
+     * @throws Exception if there's an error during the test execution
      */
     @Test
     public void shouldThrowServletExceptionOnGeneralException() throws Exception {
@@ -578,6 +610,8 @@ public class TelemetryUsageInfoTest {
 
     /**
      * Test insertUsageAudit handles release statement exception
+     * 
+     * @throws Exception if there's an error during the test execution
      */
     @Test
     public void shouldHandleReleaseStatementException() throws Exception {
@@ -615,6 +649,8 @@ public class TelemetryUsageInfoTest {
 
     /**
      * Test saveUsageAudit with missing userId from SessionInfo
+     * 
+     * @throws Exception if there's an error during the test execution
      */
     @Test
     public void shouldSkipSaveUsageAuditWithMissingUserIdFromSessionInfo() throws Exception {
@@ -635,6 +671,8 @@ public class TelemetryUsageInfoTest {
 
     /**
      * Test saveUsageAudit with missing objectId from SessionInfo
+     * 
+     * @throws Exception if there's an error during the test execution
      */
     @Test
     public void shouldSkipSaveUsageAuditWithMissingObjectIdFromSessionInfo() throws Exception {
@@ -658,6 +696,8 @@ public class TelemetryUsageInfoTest {
 
     /**
      * Test that default objecttype is set to "P" when null
+     * 
+     * @throws Exception if there's an error during the test execution
      */
     @Test
     public void shouldSetDefaultObjectTypeWhenNull() throws Exception {
@@ -690,6 +730,8 @@ public class TelemetryUsageInfoTest {
 
     /**
      * Test saveUsageAudit sets timeMillis if it's 0
+     * 
+     * @throws Exception if there's an error during the test execution
      */
     @Test
     public void shouldSetTimeMillisIfZero() throws Exception {
