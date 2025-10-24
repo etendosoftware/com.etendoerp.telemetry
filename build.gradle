@@ -45,6 +45,14 @@ sourceSets {
             srcDirs("etendo-resources")
         }
     }
+    test {
+        java {
+            srcDirs("src-test/src")
+        }
+        resources {
+            srcDirs("src-test/resources")
+        }
+    }
 }
 
 tasks.named("compileTestJava") {
@@ -57,4 +65,8 @@ tasks.named("compileTestJava") {
 */
 dependencies {
     implementation('com.etendoerp.platform:etendo-core:[25.1.0,25.4.0)')
+}
+
+test {
+    useJUnitPlatform()
 }
