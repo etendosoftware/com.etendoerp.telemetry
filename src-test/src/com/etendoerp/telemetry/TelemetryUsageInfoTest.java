@@ -406,11 +406,10 @@ public class TelemetryUsageInfoTest {
         mockedSessionInfo.when(SessionInfo::getProcessId).thenReturn("session-process-id");
         mockedSessionInfo.when(SessionInfo::getQueryProfile).thenReturn(DEFAULT_PROFILE);
         
-        // Test with mocked static method
+        // Test with mocked static method using new signature
         try (MockedStatic<TelemetryUsageInfo> mockedTelemetry = mockStatic(TelemetryUsageInfo.class)) {
             mockedTelemetry.when(() -> TelemetryUsageInfo.insertUsageAudit(
-                    any(ConnectionProvider.class), anyString(), anyString(), anyString(), 
-                    anyString(), anyString(), any(), anyString(), anyString(), anyString()))
+                    any(ConnectionProvider.class), any(TelemetryUsageInfo.UsageAuditData.class)))
                     .thenReturn(1);
             
             // Execute
@@ -440,12 +439,10 @@ public class TelemetryUsageInfoTest {
         instance.setClassname(TEST_CLASS);
         instance.setTimeMillis(TEST_TIME);
         
-        // Test with mocked static method
+        // Test with mocked static method using new signature
         try (MockedStatic<TelemetryUsageInfo> mockedTelemetry = mockStatic(TelemetryUsageInfo.class)) {
             mockedTelemetry.when(() -> TelemetryUsageInfo.insertUsageAudit(
-                    any(ConnectionProvider.class), eq(TEST_USER), eq(TEST_SESSION), 
-                    eq(TEST_OBJECT), eq(TEST_MODULE), eq(TEST_COMMAND), 
-                    eq(TEST_CLASS), eq(OBJECT_TYPE_PROCESS), eq("123456789"), anyString()))
+                    any(ConnectionProvider.class), any(TelemetryUsageInfo.UsageAuditData.class)))
                     .thenReturn(1);
             
             // Execute
@@ -473,11 +470,21 @@ public class TelemetryUsageInfoTest {
         mockedUtilSql.when(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()))
                 .thenAnswer(invocation -> null);
         
+        // Create UsageAuditData using Builder
+        TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
+                .userId(USER1)
+                .sessionId(SESSION1)
+                .objectId(OBJECT1)
+                .moduleId(MODULE1)
+                .command(COMMAND1)
+                .classname(TEST_CLASS)
+                .objecttype(OBJECT_TYPE_PROCESS)
+                .time(TIME_123456)
+                .json(JSON_TEST_DATA)
+                .build();
+        
         // Execute
-        int result = TelemetryUsageInfo.insertUsageAudit(
-                mockConnectionProvider, USER1, SESSION1, OBJECT1, 
-                MODULE1, COMMAND1, TEST_CLASS, OBJECT_TYPE_PROCESS, TIME_123456, JSON_TEST_DATA
-        );
+        int result = TelemetryUsageInfo.insertUsageAudit(mockConnectionProvider, auditData);
         
         // Verify
         assertEquals(1, result);
@@ -507,12 +514,22 @@ public class TelemetryUsageInfoTest {
         mockedUtilSql.when(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()))
                 .thenAnswer(invocation -> null);
         
+        // Create UsageAuditData using Builder
+        TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
+                .userId(USER1)
+                .sessionId(SESSION1)
+                .objectId(OBJECT1)
+                .moduleId(MODULE1)
+                .command(COMMAND1)
+                .classname(TEST_CLASS)
+                .objecttype(OBJECT_TYPE_PROCESS)
+                .time(TIME_123456)
+                .json(JSON_TEST_DATA)
+                .build();
+        
         // Execute and verify
         ServletException exception = assertThrows(ServletException.class, () ->
-            TelemetryUsageInfo.insertUsageAudit(
-                    mockConnectionProvider, USER1, SESSION1, OBJECT1, 
-                    MODULE1, COMMAND1, TEST_CLASS, OBJECT_TYPE_PROCESS, TIME_123456, JSON_TEST_DATA
-            )
+            TelemetryUsageInfo.insertUsageAudit(mockConnectionProvider, auditData)
         );
         
         assertTrue(exception.getMessage().contains("@CODE=12345@"));
@@ -536,12 +553,22 @@ public class TelemetryUsageInfoTest {
         mockedUtilSql.when(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()))
                 .thenAnswer(invocation -> null);
         
+        // Create UsageAuditData using Builder
+        TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
+                .userId(USER1)
+                .sessionId(SESSION1)
+                .objectId(OBJECT1)
+                .moduleId(MODULE1)
+                .command(COMMAND1)
+                .classname(TEST_CLASS)
+                .objecttype(OBJECT_TYPE_PROCESS)
+                .time(TIME_123456)
+                .json(JSON_TEST_DATA)
+                .build();
+        
         // Execute and verify
         ServletException exception = assertThrows(ServletException.class, () ->
-            TelemetryUsageInfo.insertUsageAudit(
-                    mockConnectionProvider, USER1, SESSION1, OBJECT1, 
-                    MODULE1, COMMAND1, TEST_CLASS, OBJECT_TYPE_PROCESS, TIME_123456, JSON_TEST_DATA
-            )
+            TelemetryUsageInfo.insertUsageAudit(mockConnectionProvider, auditData)
         );
         
         assertTrue(exception.getMessage().contains("@CODE=@"));
@@ -565,11 +592,21 @@ public class TelemetryUsageInfoTest {
         mockedUtilSql.when(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()))
                 .thenAnswer(invocation -> null);
         
+        // Create UsageAuditData using Builder
+        TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
+                .userId(USER1)
+                .sessionId(SESSION1)
+                .objectId(OBJECT1)
+                .moduleId(MODULE1)
+                .command(COMMAND1)
+                .classname(TEST_CLASS)
+                .objecttype(OBJECT_TYPE_PROCESS)
+                .time(TIME_123456)
+                .json(JSON_TEST_DATA)
+                .build();
+        
         // Execute - should not throw exception despite release error
-        int result = TelemetryUsageInfo.insertUsageAudit(
-                mockConnectionProvider, USER1, SESSION1, OBJECT1, 
-                MODULE1, COMMAND1, TEST_CLASS, OBJECT_TYPE_PROCESS, TIME_123456, JSON_TEST_DATA
-        );
+        int result = TelemetryUsageInfo.insertUsageAudit(mockConnectionProvider, auditData);
         
         // Verify
         assertEquals(1, result);
@@ -635,11 +672,10 @@ public class TelemetryUsageInfoTest {
         // Mock SessionInfo to return null for process type
         mockedSessionInfo.when(SessionInfo::getProcessType).thenReturn(null);
         
-        // Test with mocked static method
+        // Test with mocked static method using new signature
         try (MockedStatic<TelemetryUsageInfo> mockedTelemetry = mockStatic(TelemetryUsageInfo.class)) {
             mockedTelemetry.when(() -> TelemetryUsageInfo.insertUsageAudit(
-                    any(ConnectionProvider.class), anyString(), anyString(), anyString(), 
-                    anyString(), anyString(), any(), eq(OBJECT_TYPE_PROCESS), anyString(), anyString()))
+                    any(ConnectionProvider.class), any(TelemetryUsageInfo.UsageAuditData.class)))
                     .thenReturn(1);
             
             // Execute
@@ -647,8 +683,7 @@ public class TelemetryUsageInfoTest {
             
             // Verify default objecttype "P" was used
             mockedTelemetry.verify(() -> TelemetryUsageInfo.insertUsageAudit(
-                    any(ConnectionProvider.class), anyString(), anyString(), anyString(), 
-                    anyString(), anyString(), any(), eq(OBJECT_TYPE_PROCESS), anyString(), anyString()), 
+                    any(ConnectionProvider.class), any(TelemetryUsageInfo.UsageAuditData.class)), 
                     times(1));
         }
     }
@@ -670,11 +705,10 @@ public class TelemetryUsageInfoTest {
         
         long beforeTime = System.currentTimeMillis();
         
-        // Test with mocked static method
+        // Test with mocked static method using new signature
         try (MockedStatic<TelemetryUsageInfo> mockedTelemetry = mockStatic(TelemetryUsageInfo.class)) {
             mockedTelemetry.when(() -> TelemetryUsageInfo.insertUsageAudit(
-                    any(ConnectionProvider.class), anyString(), anyString(), anyString(), 
-                    anyString(), anyString(), any(), anyString(), anyString(), anyString()))
+                    any(ConnectionProvider.class), any(TelemetryUsageInfo.UsageAuditData.class)))
                     .thenReturn(1);
             
             // Execute
@@ -686,5 +720,61 @@ public class TelemetryUsageInfoTest {
             assertTrue(instance.getTimeMillis() >= beforeTime);
             assertTrue(instance.getTimeMillis() <= afterTime);
         }
+    }
+
+    /**
+     * Test UsageAuditData Builder pattern
+     */
+    @Test
+    public void shouldBuildUsageAuditDataWithBuilder() {
+        // Execute
+        TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
+                .userId(USER1)
+                .sessionId(SESSION1)
+                .objectId(OBJECT1)
+                .moduleId(MODULE1)
+                .command(COMMAND1)
+                .classname(TEST_CLASS)
+                .objecttype(OBJECT_TYPE_PROCESS)
+                .time(TIME_123456)
+                .json(JSON_TEST_DATA)
+                .build();
+        
+        // Verify
+        assertNotNull(auditData);
+        assertEquals(USER1, auditData.getUserId());
+        assertEquals(SESSION1, auditData.getSessionId());
+        assertEquals(OBJECT1, auditData.getObjectId());
+        assertEquals(MODULE1, auditData.getModuleId());
+        assertEquals(COMMAND1, auditData.getCommand());
+        assertEquals(TEST_CLASS, auditData.getClassname());
+        assertEquals(OBJECT_TYPE_PROCESS, auditData.getObjecttype());
+        assertEquals(TIME_123456, auditData.getTime());
+        assertEquals(JSON_TEST_DATA, auditData.getJson());
+    }
+
+    /**
+     * Test UsageAuditData Builder with partial data
+     */
+    @Test
+    public void shouldBuildUsageAuditDataWithPartialData() {
+        // Execute
+        TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
+                .userId(USER1)
+                .sessionId(SESSION1)
+                .command(COMMAND1)
+                .build();
+        
+        // Verify
+        assertNotNull(auditData);
+        assertEquals(USER1, auditData.getUserId());
+        assertEquals(SESSION1, auditData.getSessionId());
+        assertEquals(COMMAND1, auditData.getCommand());
+        assertNull(auditData.getObjectId());
+        assertNull(auditData.getModuleId());
+        assertNull(auditData.getClassname());
+        assertNull(auditData.getObjecttype());
+        assertNull(auditData.getTime());
+        assertNull(auditData.getJson());
     }
 }
