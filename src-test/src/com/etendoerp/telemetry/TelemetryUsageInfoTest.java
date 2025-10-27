@@ -197,9 +197,35 @@ public class TelemetryUsageInfoTest {
    *
    * @throws SQLException if there's an error configuring mocks
    */
-  private void configureMocksForInsertUsageAudit() throws SQLException {
+  private void configureMocksForInsertUsageAudit() throws Exception {
     when(mockConnectionProvider.getPreparedStatement(anyString())).thenReturn(mockPreparedStatement);
     when(mockPreparedStatement.executeUpdate()).thenReturn(1);
+  }
+
+  /**
+   * Helper method to setup common mocks and create test audit data.
+   *
+   * @return configured UsageAuditData for testing
+   */
+  private TelemetryUsageInfo.UsageAuditData setupCommonMocksAndCreateAuditData() {
+    mockedSessionInfo.when(SessionInfo::getQueryProfile).thenReturn(DEFAULT_PROFILE);
+
+    // Mock UtilSql.setValue to do nothing
+    mockedUtilSql.when(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()))
+        .thenAnswer(invocation -> null);
+
+    // Create UsageAuditData using Builder
+    return new TelemetryUsageInfo.UsageAuditData.Builder()
+        .userId(USER1)
+        .sessionId(SESSION1)
+        .objectId(OBJECT1)
+        .moduleId(MODULE1)
+        .command(COMMAND1)
+        .classname(TEST_CLASS)
+        .objecttype(OBJECT_TYPE_PROCESS)
+        .time(TIME_123456)
+        .json(JSON_TEST_DATA)
+        .build();
   }
 
   /**
@@ -475,7 +501,6 @@ public class TelemetryUsageInfoTest {
     // Note: Can't verify mockConnectionProvider since the method returns early
     // when sessionId is empty, before any database operations
   }
-  }
 
   /**
    * Test saveUsageAudit with null command
@@ -566,25 +591,7 @@ public class TelemetryUsageInfoTest {
   public void shouldInsertUsageAuditSuccessfully() throws Exception {
     // Setup
     configureMocksForInsertUsageAudit();
-
-    mockedSessionInfo.when(SessionInfo::getQueryProfile).thenReturn(DEFAULT_PROFILE);
-
-    // Mock UtilSql.setValue to do nothing
-    mockedUtilSql.when(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()))
-        .thenAnswer(invocation -> null);
-
-    // Create UsageAuditData using Builder
-    TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
-        .userId(USER1)
-        .sessionId(SESSION1)
-        .objectId(OBJECT1)
-        .moduleId(MODULE1)
-        .command(COMMAND1)
-        .classname(TEST_CLASS)
-        .objecttype(OBJECT_TYPE_PROCESS)
-        .time(TIME_123456)
-        .json(JSON_TEST_DATA)
-        .build();
+    TelemetryUsageInfo.UsageAuditData auditData = setupCommonMocksAndCreateAuditData();
 
     // Execute
     int result = TelemetryUsageInfo.insertUsageAudit(mockConnectionProvider, auditData);
@@ -614,24 +621,7 @@ public class TelemetryUsageInfoTest {
     when(mockConnectionProvider.getPreparedStatement(anyString())).thenReturn(mockPreparedStatement);
     when(mockPreparedStatement.executeUpdate()).thenThrow(sqlException);
 
-    mockedSessionInfo.when(SessionInfo::getQueryProfile).thenReturn(DEFAULT_PROFILE);
-
-    // Mock UtilSql.setValue to do nothing
-    mockedUtilSql.when(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()))
-        .thenAnswer(invocation -> null);
-
-    // Create UsageAuditData using Builder
-    TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
-        .userId(USER1)
-        .sessionId(SESSION1)
-        .objectId(OBJECT1)
-        .moduleId(MODULE1)
-        .command(COMMAND1)
-        .classname(TEST_CLASS)
-        .objecttype(OBJECT_TYPE_PROCESS)
-        .time(TIME_123456)
-        .json(JSON_TEST_DATA)
-        .build();
+    TelemetryUsageInfo.UsageAuditData auditData = setupCommonMocksAndCreateAuditData();
 
     // Execute and verify
     try {
@@ -657,24 +647,7 @@ public class TelemetryUsageInfoTest {
     when(mockConnectionProvider.getPreparedStatement(anyString())).thenReturn(mockPreparedStatement);
     when(mockPreparedStatement.executeUpdate()).thenThrow(runtimeException);
 
-    mockedSessionInfo.when(SessionInfo::getQueryProfile).thenReturn(DEFAULT_PROFILE);
-
-    // Mock UtilSql.setValue to do nothing
-    mockedUtilSql.when(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()))
-        .thenAnswer(invocation -> null);
-
-    // Create UsageAuditData using Builder
-    TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
-        .userId(USER1)
-        .sessionId(SESSION1)
-        .objectId(OBJECT1)
-        .moduleId(MODULE1)
-        .command(COMMAND1)
-        .classname(TEST_CLASS)
-        .objecttype(OBJECT_TYPE_PROCESS)
-        .time(TIME_123456)
-        .json(JSON_TEST_DATA)
-        .build();
+    TelemetryUsageInfo.UsageAuditData auditData = setupCommonMocksAndCreateAuditData();
 
     // Execute and verify
     try {
@@ -700,24 +673,7 @@ public class TelemetryUsageInfoTest {
     doThrow(new SQLException("Release error")).when(mockConnectionProvider).releasePreparedStatement(
         mockPreparedStatement);
 
-    mockedSessionInfo.when(SessionInfo::getQueryProfile).thenReturn(DEFAULT_PROFILE);
-
-    // Mock UtilSql.setValue to do nothing
-    mockedUtilSql.when(() -> UtilSql.setValue(any(PreparedStatement.class), anyInt(), anyInt(), any(), anyString()))
-        .thenAnswer(invocation -> null);
-
-    // Create UsageAuditData using Builder
-    TelemetryUsageInfo.UsageAuditData auditData = new TelemetryUsageInfo.UsageAuditData.Builder()
-        .userId(USER1)
-        .sessionId(SESSION1)
-        .objectId(OBJECT1)
-        .moduleId(MODULE1)
-        .command(COMMAND1)
-        .classname(TEST_CLASS)
-        .objecttype(OBJECT_TYPE_PROCESS)
-        .time(TIME_123456)
-        .json(JSON_TEST_DATA)
-        .build();
+    TelemetryUsageInfo.UsageAuditData auditData = setupCommonMocksAndCreateAuditData();
 
     // Execute - should not throw exception despite release error
     int result = TelemetryUsageInfo.insertUsageAudit(mockConnectionProvider, auditData);
