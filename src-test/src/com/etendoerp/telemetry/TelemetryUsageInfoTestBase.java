@@ -108,8 +108,10 @@ public abstract class TelemetryUsageInfoTestBase {
   /**
    * Helper method to create and configure a basic TelemetryUsageInfo instance.
    *
-   * @param sessionId the session ID to set
-   * @param command the command to set
+   * @param sessionId
+   *     the session ID to set
+   * @param command
+   *     the command to set
    * @return configured TelemetryUsageInfo instance
    */
   protected TelemetryUsageInfo createBasicInstance(String sessionId, String command) {
@@ -143,7 +145,8 @@ public abstract class TelemetryUsageInfoTestBase {
   /**
    * Helper method to setup TelemetryUsageInfo static mocks for successful execution.
    *
-   * @param mockedTelemetry the MockedStatic instance to configure
+   * @param mockedTelemetry
+   *     the MockedStatic instance to configure
    */
   protected void setupTelemetryStaticMocks(MockedStatic<TelemetryUsageInfo> mockedTelemetry) {
     mockedTelemetry.when(TelemetryUsageInfo::getInstance).thenCallRealMethod();
@@ -173,7 +176,8 @@ public abstract class TelemetryUsageInfoTestBase {
   /**
    * Helper method to configure mocks for insertUsageAudit testing.
    *
-   * @throws SQLException if there's an error configuring mocks
+   * @throws SQLException
+   *     if there's an error configuring mocks
    */
   protected void configureMocksForInsertUsageAudit() throws Exception {
     when(mockConnectionProvider.getPreparedStatement(anyString())).thenReturn(mockPreparedStatement);

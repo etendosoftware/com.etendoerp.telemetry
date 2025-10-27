@@ -45,7 +45,7 @@ public class TelemetryUsageInfoDatabaseTest extends TelemetryUsageInfoTestBase {
   @Test
   public void shouldSkipSaveUsageAuditWithNullSessionId() throws ServletException, JSONException {
     TelemetryUsageInfo instance = createBasicInstance(null, TEST_COMMAND);
-    
+
     // Should not throw exception, just skip silently
     instance.saveUsageAudit();
 

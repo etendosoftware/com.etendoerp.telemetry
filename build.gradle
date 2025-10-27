@@ -67,6 +67,3 @@ dependencies {
     implementation('com.etendoerp.platform:etendo-core:[25.1.0,25.4.0)')
 }
 
-test {
-    useJUnitPlatform()
-}
