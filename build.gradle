@@ -37,6 +37,12 @@ repositories {
     maven {
         url "https://maven.pkg.github.com/etendosoftware/com.etendoerp.platform.extensions"
     }
+    maven {
+        url "https://repo.futit.cloud/repository/maven-public-releases"
+    }
+    maven {
+        url "https://repo.futit.cloud/repository/maven-public-jars"
+    }
 }
 
 sourceSets {
@@ -45,19 +51,8 @@ sourceSets {
             srcDirs("etendo-resources")
         }
     }
-    test {
-        java {
-            srcDirs("src-test/src")
-        }
-        resources {
-            srcDirs("src-test/resources")
-        }
-    }
 }
 
-tasks.named("compileTestJava") {
-    dependsOn("jar")
-}
 
 /**
 * Declare Java dependencies using 'implementation'
