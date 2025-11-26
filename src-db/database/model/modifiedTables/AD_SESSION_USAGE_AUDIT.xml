@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+  <database name="MODIFIED TABLE AD_SESSION_USAGE_AUDIT">
+    <table name="AD_SESSION_USAGE_AUDIT" primaryKey="AD_SESSION_USAGE_AUDIT_KEY">
+      <column name="EM_ETTELEM_JSONDATA" primaryKey="false" required="false" type="CLOB" size="4000" autoIncrement="false">
+        <default/>
+        <onCreateDefault/>
+      </column>
+    </table>
+  </database>
