@@ -7,7 +7,7 @@
 */
 
 group          = "com.etendoerp"
-version        = "3.0.0"
+version        = "3.1.0"
 description    = "This module provides telemetry features for Etendo ERP."
 ext.artifact   = "telemetry"
 ext.repository = "https://maven.pkg.github.com/etendosoftware/com.etendoerp.platform.extensions"
@@ -59,6 +59,6 @@ sourceSets {
 * Ex: implementation "com.sun.mail:javax.mail:1.6.2"
 */
 dependencies {
-    implementation('com.etendoerp.platform:etendo-core:[25.1.0,25.4.0)')
+    implementation('com.etendoerp.platform:etendo-core:[25.1.0,26.1.0)')
 }
 

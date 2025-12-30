@@ -6,7 +6,7 @@
 <!--3569CB0A5A56495BA570B5143880DEED-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
 <!--3569CB0A5A56495BA570B5143880DEED-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--3569CB0A5A56495BA570B5143880DEED-->  <NAME><![CDATA[Etendo Telemetry Module]]></NAME>
-<!--3569CB0A5A56495BA570B5143880DEED-->  <VERSION><![CDATA[3.0.0]]></VERSION>
+<!--3569CB0A5A56495BA570B5143880DEED-->  <VERSION><![CDATA[3.1.0]]></VERSION>
 <!--3569CB0A5A56495BA570B5143880DEED-->  <DESCRIPTION><![CDATA[Base module for capturing and storing telemetry data related to user sessions and system activity. Provides reusable utilities for dependent modules.]]></DESCRIPTION>
 <!--3569CB0A5A56495BA570B5143880DEED-->  <HELP><![CDATA[Enables extended session tracking and simplified integration of telemetry logging in other modules.]]></HELP>
 <!--3569CB0A5A56495BA570B5143880DEED-->  <TYPE><![CDATA[M]]></TYPE>
