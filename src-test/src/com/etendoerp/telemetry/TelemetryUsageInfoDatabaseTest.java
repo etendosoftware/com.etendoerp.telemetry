@@ -33,7 +33,7 @@ import static org.mockito.Mockito.when;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 
 import org.codehaus.jettison.json.JSONException;
 import org.junit.Test;
