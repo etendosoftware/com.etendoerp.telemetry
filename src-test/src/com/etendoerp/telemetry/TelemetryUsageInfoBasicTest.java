@@ -329,4 +329,31 @@ public class TelemetryUsageInfoBasicTest extends TelemetryUsageInfoTestBase {
     assertNull(auditData.getTime());
     assertNull(auditData.getJson());
   }
+
+  /**
+   * Test that setJsonObject accepts null and stores it as-is.
+   */
+  @Test
+  public void shouldAllowNullJsonObject() {
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+
+    instance.setJsonObject(null);
+
+    assertNull(instance.getJsonObject());
+  }
+
+  /**
+   * Test that a new instance after clear gets a fresh timestamp.
+   */
+  @Test
+  public void shouldCreateFreshTimestampAfterClear() {
+    TelemetryUsageInfo instance1 = TelemetryUsageInfo.getInstance();
+    instance1.setTimeMillis(1L);
+
+    TelemetryUsageInfo.clear();
+
+    TelemetryUsageInfo instance2 = TelemetryUsageInfo.getInstance();
+    assertNotSame(instance1, instance2);
+    assertTrue(instance2.getTimeMillis() > 1L);
+  }
 }

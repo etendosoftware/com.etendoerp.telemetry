@@ -33,7 +33,7 @@ import static org.mockito.Mockito.when;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 
 import org.codehaus.jettison.json.JSONException;
 import org.junit.Test;
@@ -214,6 +214,24 @@ public class TelemetryUsageInfoDatabaseTest extends TelemetryUsageInfoTestBase {
 
     // Note: Can't verify mockConnectionProvider since the method returns early
     // when objectId is null, before any database operations
+  }
+
+  /**
+   * Test saveUsageAudit with missing moduleId from SessionInfo.
+   *
+   * @throws Exception
+   *     if there's an error during the test execution
+   */
+  @Test
+  public void shouldSkipSaveUsageAuditWithMissingModuleIdFromSessionInfo() throws Exception {
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    instance.setSessionId(TEST_SESSION);
+    instance.setCommand(TEST_COMMAND);
+
+    mockedSessionInfo.when(SessionInfo::getUserId).thenReturn("user-id");
+    mockedSessionInfo.when(SessionInfo::getModuleId).thenReturn("");
+
+    instance.saveUsageAudit();
   }
 
   /**
