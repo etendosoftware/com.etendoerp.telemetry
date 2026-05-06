@@ -26,8 +26,8 @@ import static org.mockito.Mockito.when;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
@@ -80,7 +80,7 @@ public abstract class TelemetryUsageInfoTestBase {
    * Sets up test environment before each test.
    * Initialize mocks and clears thread-local instances.
    */
-  @Before
+  @BeforeEach
   public void setUp() {
     mocks = MockitoAnnotations.openMocks(this);
 
@@ -102,7 +102,7 @@ public abstract class TelemetryUsageInfoTestBase {
    * @throws Exception
    *     if cleanup fails
    */
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     // Clean up thread-local instances after each test
     TelemetryUsageInfo.clear();
