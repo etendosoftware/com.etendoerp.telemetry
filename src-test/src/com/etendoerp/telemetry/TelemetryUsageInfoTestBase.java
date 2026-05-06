@@ -78,7 +78,7 @@ public abstract class TelemetryUsageInfoTestBase {
 
   /**
    * Sets up test environment before each test.
-   * Initializes mocks and clears thread-local instances.
+   * Initialize mocks and clears thread-local instances.
    */
   @Before
   public void setUp() {
@@ -138,7 +138,7 @@ public abstract class TelemetryUsageInfoTestBase {
   }
 
   /**
-   * Helper method to setup SessionInfo mocks with default values.
+   * Helper method to set up SessionInfo mocks with default values.
    */
   protected void setupSessionInfoMocks() {
     mockedSessionInfo.when(SessionInfo::getUserId).thenReturn("session-user-id");
@@ -149,7 +149,7 @@ public abstract class TelemetryUsageInfoTestBase {
   }
 
   /**
-   * Helper method to setup mocks for successful saveUsageAudit execution.
+   * Helper method to set up mocks for successful saveUsageAudit execution.
    *
    * @return configured MockedConstruction for DalConnectionProvider
    */
@@ -159,7 +159,7 @@ public abstract class TelemetryUsageInfoTestBase {
   }
 
   /**
-   * Helper method to setup TelemetryUsageInfo static mocks for successful execution.
+   * Helper method to set up TelemetryUsageInfo static mocks for successful execution.
    *
    * @param mockedTelemetry
    *     the MockedStatic instance to configure

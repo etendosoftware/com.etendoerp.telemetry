@@ -22,7 +22,6 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -33,7 +32,7 @@ import static org.mockito.Mockito.when;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import jakarta.servlet.ServletException;
+import javax.servlet.ServletException;
 
 import org.codehaus.jettison.json.JSONException;
 import org.junit.Test;
@@ -318,7 +317,7 @@ public class TelemetryUsageInfoDatabaseTest extends TelemetryUsageInfoTestBase {
     // Verify
     assertEquals(1, result);
     verify(mockConnectionProvider).getPreparedStatement(anyString());
-    verify(mockQueryTimeOutUtil).setQueryTimeOut(eq(mockPreparedStatement), eq(DEFAULT_PROFILE));
+    verify(mockQueryTimeOutUtil).setQueryTimeOut(mockPreparedStatement, DEFAULT_PROFILE);
     verify(mockPreparedStatement).executeUpdate();
     verify(mockConnectionProvider).releasePreparedStatement(mockPreparedStatement);
 
