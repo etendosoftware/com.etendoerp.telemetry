@@ -16,11 +16,11 @@
  */
 package com.etendoerp.telemetry;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test suite for TelemetryUsageInfo basic functionality.
@@ -328,5 +328,32 @@ public class TelemetryUsageInfoBasicTest extends TelemetryUsageInfoTestBase {
     assertNull(auditData.getObjecttype());
     assertNull(auditData.getTime());
     assertNull(auditData.getJson());
+  }
+
+  /**
+   * Test that setJsonObject accepts null and stores it as-is.
+   */
+  @Test
+  public void shouldAllowNullJsonObject() {
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+
+    instance.setJsonObject(null);
+
+    assertNull(instance.getJsonObject());
+  }
+
+  /**
+   * Test that a new instance after clear gets a fresh timestamp.
+   */
+  @Test
+  public void shouldCreateFreshTimestampAfterClear() {
+    TelemetryUsageInfo instance1 = TelemetryUsageInfo.getInstance();
+    instance1.setTimeMillis(1L);
+
+    TelemetryUsageInfo.clear();
+
+    TelemetryUsageInfo instance2 = TelemetryUsageInfo.getInstance();
+    assertNotSame(instance1, instance2);
+    assertTrue(instance2.getTimeMillis() > 1L);
   }
 }

@@ -16,13 +16,12 @@
  */
 package com.etendoerp.telemetry;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -36,7 +35,7 @@ import java.sql.SQLException;
 import javax.servlet.ServletException;
 
 import org.codehaus.jettison.json.JSONException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.openbravo.data.UtilSql;
@@ -217,6 +216,24 @@ public class TelemetryUsageInfoDatabaseTest extends TelemetryUsageInfoTestBase {
   }
 
   /**
+   * Test saveUsageAudit with missing moduleId from SessionInfo.
+   *
+   * @throws Exception
+   *     if there's an error during the test execution
+   */
+  @Test
+  public void shouldSkipSaveUsageAuditWithMissingModuleIdFromSessionInfo() throws Exception {
+    TelemetryUsageInfo instance = TelemetryUsageInfo.getInstance();
+    instance.setSessionId(TEST_SESSION);
+    instance.setCommand(TEST_COMMAND);
+
+    mockedSessionInfo.when(SessionInfo::getUserId).thenReturn("user-id");
+    mockedSessionInfo.when(SessionInfo::getModuleId).thenReturn("");
+
+    instance.saveUsageAudit();
+  }
+
+  /**
    * Test that default objecttype is set to "P" when null
    *
    * @throws Exception
@@ -300,7 +317,7 @@ public class TelemetryUsageInfoDatabaseTest extends TelemetryUsageInfoTestBase {
     // Verify
     assertEquals(1, result);
     verify(mockConnectionProvider).getPreparedStatement(anyString());
-    verify(mockQueryTimeOutUtil).setQueryTimeOut(eq(mockPreparedStatement), eq(DEFAULT_PROFILE));
+    verify(mockQueryTimeOutUtil).setQueryTimeOut(mockPreparedStatement, DEFAULT_PROFILE);
     verify(mockPreparedStatement).executeUpdate();
     verify(mockConnectionProvider).releasePreparedStatement(mockPreparedStatement);
 

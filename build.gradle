@@ -53,12 +53,15 @@ sourceSets {
     }
 }
 
-
 /**
 * Declare Java dependencies using 'implementation'
 * Ex: implementation "com.sun.mail:javax.mail:1.6.2"
 */
 dependencies {
     implementation('com.etendoerp.platform:etendo-core:[26.1.0,26.2.0)')
+}
+
+test {
+    useJUnitPlatform()
 }
 
